@@ -1,0 +1,53 @@
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>单点式WebSocket</title>
+    <script type="text/javascript" th:src="@{/js/jquery-3.2.1.js}"></script>
+    <script type="text/javascript" th:src="@{/js/stomp.js}"></script>
+    <script type="text/javascript" th:src="@{/js/sockjs.min.js}"></script>
+</head>
+<body onload="disconnect()">
+<noscript><h2 style="color: #e80b0a;">Sorry，浏览器不支持WebSocket</h2></noscript>
+<div>
+    <div>
+        <labal>用户</labal><input type="text" id="user" />
+        <button id="connect" onclick="connect();">登录</button>
+        <button id="disconnect" disabled="disabled" onclick="disconnect();">退出</button>
+    </div>
+    <p id="response"></p>
+</div>
+<script type="text/javascript">
+  var stompClient = null;
+
+  function setConnected(connected) {
+    document.getElementById("connect").disabled = connected;
+    document.getElementById("disconnect").disabled = !connected;
+    $("#response").html();
+  }
+
+  function connect() {
+    var socket = new SockJS('/queueServer');
+    stompClient = Stomp.over(socket);
+    stompClient.connect({}, function (frame) {
+      setConnected(true);
+      console.log('Connected:' + frame);
+      stompClient.subscribe('/user/'+document.getElementById('user').value+'/message', function (response) {
+        showResponse(JSON.parse(response.body));
+      })
+    });
+  }
+
+  function disconnect() {
+    if (stompClient != null) {
+      stompClient.disconnect();
+    }
+    setConnected(false);
+    console.log('Disconnected');
+  }
+
+  function showResponse(message) {
+    $("#response").html(message);
+  }
+</script>
+</body>
+</html>
